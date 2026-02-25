@@ -1,190 +1,135 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
 
-export default function Home() {
-  const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    password: "",
-  });
+export default function Page() {
+  const [boards, setBoards] = useState([]);
+  const [title, setTitle] = useState("");
+  const router = useRouter();
+  const pathname = usePathname(); // Track current route
 
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
-
-  const handleChange = (e) => {
-    setForm((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
-  };
-
-  const handleSignup = async (e) => {
-    e.preventDefault();
-
-    if (!form.name || !form.email || !form.password) {
-      setMessage("Please fill all fields");
-      return;
+  // Fetch boards from API
+  async function fetchBoards() {
+    try {
+      const res = await fetch("/api/boards");
+      const data = await res.json();
+      setBoards(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.log(err);
     }
+  }
 
-    setLoading(true);
-    setMessage("");
+  // Refetch boards whenever route changes (like coming back from a board page)
+  useEffect(() => {
+    fetchBoards();
+  }, [pathname]);
+
+  // Create a new board
+  async function createBoard() {
+    if (!title.trim()) return;
 
     try {
-      const res = await fetch("/api/auth", {
+      const res = await fetch("/api/boards", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(form),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, owner: "demo-user" }),
       });
 
-      const data = await res.json();
- alert(data.message);
-      if (!res.ok) {
-        setMessage(data.message || "Signup failed");
-      } else {
-        localStorage.setItem("token", data.token);
-        setMessage("Account created 🎉");
-
-        setForm({
-          name: "",
-          email: "",
-          password: "",
-        });
-
-        setOpen(false);
+      if (res.ok) {
+        const newBoard = await res.json();
+        setBoards((prev) => [newBoard, ...prev]); // Optimistically update list
+        setTitle(""); // Clear input
       }
     } catch (err) {
-      setMessage("Server error");
+      console.log(err);
     }
+  }
 
-    setLoading(false);
-  };
+  // Delete a board
+  async function deleteBoard(id) {
+    try {
+      const res = await fetch(`/api/boards/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setBoards((prev) => prev.filter((b) => b._id !== id));
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  }
 
   return (
-    <main className="min-h-screen text-neutral-100 bg-gradient-to-b from-neutral-950 via-neutral-950 to-black">
-
-      {/* Navbar */}
-      <nav className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
-        <h1 className="text-lg font-semibold tracking-tight">
-          TaskFlow
-        </h1>
-
-        <div className="flex items-center gap-6">
-          <button className="text-sm text-neutral-400 hover:text-white transition">
-            Signup
-          </button>
-
-          <button
-            onClick={() => setOpen(true)}
-            className="bg-white text-black px-4 py-2 rounded-lg text-sm hover:scale-105 transition"
-          >
-            Get Started
-          </button>
+    <div className="min-h-screen bg-gradient-to-b from-black via-zinc-950 to-black text-white px-4 py-12">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="mb-12">
+          <h1 className="text-4xl font-semibold tracking-tight">Your Boards</h1>
+          <p className="text-zinc-400 mt-2">
+            Organize your ideas, tasks, and collaborations in one place.
+          </p>
         </div>
-      </nav>
 
-      {/* Hero */}
-      <section className="max-w-5xl mx-auto px-6 pt-24 pb-24 text-center">
-
-        <h1 className="text-4xl md:text-6xl font-semibold tracking-tight leading-tight">
-          The modern way to manage
-          <span className="block bg-gradient-to-r from-white via-gray-300 to-gray-500 bg-clip-text text-transparent">
-            collaborative tasks
-          </span>
-        </h1>
-
-        <p className="mt-6 text-neutral-400 max-w-xl mx-auto">
-          Create boards, assign tasks, collaborate with your team
-          and see updates instantly.
-        </p>
-
-        <div className="mt-10 flex justify-center gap-4">
-
-          <button
-            onClick={() => setOpen(true)}
-            className="bg-white text-black px-7 py-3 rounded-xl text-sm hover:scale-105 transition shadow-lg shadow-white/10"
-          >
-            Start for free
-          </button>
-
-        </div>
-      </section>
-
-      {/* Signup Modal */}
-      {open && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/70 px-6">
-
-          <form
-            onSubmit={handleSignup}
-            className="bg-neutral-900 border border-neutral-800 rounded-xl p-8 w-full max-w-md"
-          >
-            <h2 className="text-xl mb-6 font-semibold">
-              Create Account
-            </h2>
-
+        {/* Create Board */}
+        <div className="bg-zinc-900/60 border border-zinc-800 p-5 rounded-2xl mb-12 backdrop-blur">
+          <p className="text-sm text-zinc-400 mb-3">
+            Create a new workspace board
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3">
             <input
-              type="text"
-              name="name"
-              value={form.name}
-              placeholder="Name"
-              onChange={handleChange}
-              required
-              className="w-full mb-3 p-3 rounded bg-neutral-950 border border-neutral-800"
+              className="bg-black/60 border border-zinc-800 px-4 py-3 rounded-xl w-full outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition"
+              placeholder="Ex: Product Roadmap, Startup Ideas..."
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
             />
-
-            <input
-              type="email"
-              name="email"
-              value={form.email}
-              placeholder="Email"
-              onChange={handleChange}
-              required
-              className="w-full mb-3 p-3 rounded bg-neutral-950 border border-neutral-800"
-            />
-
-            <input
-              type="password"
-              name="password"
-              value={form.password}
-              placeholder="Password"
-              onChange={handleChange}
-              required
-              className="w-full mb-4 p-3 rounded bg-neutral-950 border border-neutral-800"
-            />
-
             <button
-              disabled={loading}
-              className="w-full bg-white text-black py-3 rounded-lg font-medium hover:scale-[1.02] transition"
+              onClick={createBoard}
+              className="bg-indigo-500 hover:bg-indigo-600 text-white px-6 py-3 rounded-xl font-medium transition shadow-lg shadow-indigo-500/20"
             >
-              {loading ? "Creating..." : "Sign Up"}
+              Create Board
             </button>
-
-            {message && (
-              <p className="text-sm text-neutral-400 mt-3">
-                {message}
-              </p>
-            )}
-
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="text-xs text-neutral-500 mt-4"
-            >
-              Close
-            </button>
-          </form>
-
+          </div>
         </div>
-      )}
 
-      {/* Footer */}
-      <footer className="border-t border-neutral-900 text-center text-sm text-neutral-500 py-6">
-        Built for Full Stack Assignment
-      </footer>
+        {/* Boards List */}
+        {boards.length === 0 ? (
+          <div className="text-center py-16 border border-zinc-900 rounded-2xl bg-zinc-900/40">
+            <p className="text-zinc-400 text-lg">No boards yet</p>
+            <p className="text-zinc-500 text-sm mt-2">
+              Create your first board to start organizing work.
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3">
+            {boards.map((board) => (
+              <div
+                key={board._id}
+                onClick={() => router.push(`/board/${board._id}`)}
+                className="group bg-zinc-900/70 backdrop-blur border border-zinc-800 p-6 rounded-2xl hover:border-indigo-500/40 hover:shadow-xl hover:shadow-indigo-500/10 transition-all duration-200 cursor-pointer relative"
+              >
+                <div className="flex items-start justify-between">
+                  <h2 className="text-lg font-medium text-zinc-200 group-hover:text-white">
+                    {board.title}
+                  </h2>
 
-    </main>
+                  <div className="w-2 h-2 bg-indigo-500 rounded-full opacity-70"></div>
+                </div>
+
+                <p className="text-xs text-zinc-500 mt-2">Click to open board</p>
+
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation(); // Prevent opening board
+                    deleteBoard(board._id);
+                  }}
+                  className="text-sm text-zinc-500 mt-6 hover:text-red-400 transition"
+                >
+                  Delete
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
