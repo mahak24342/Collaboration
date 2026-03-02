@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { IoLockClosed } from "react-icons/io5";
+import Image from "next/image";
 export default function Home() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -70,6 +71,8 @@ const [menuOpen, setMenuOpen] = useState(false);
       {/* Navbar */}
   <nav className="w-full max-w-7xl mx-auto px-6 py-4 flex items-center justify-between relative">
       {/* Logo */}
+      <Image src="/qw.png" width={180} // adjust for desktop
+    height={180} alt=""/>
       <h1 className="text-2xl font-bold tracking-tight text-white">
         TaskFlow
       </h1>

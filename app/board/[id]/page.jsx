@@ -5,72 +5,61 @@ import { useRouter, useParams } from "next/navigation";
 
 export default function BoardPage() {
   const router = useRouter();
-  const params = useParams();
-  const id = params?.id; // board id from route
+  const { id } = useParams(); // board id
 
   const [board, setBoard] = useState(null);
   const [title, setTitle] = useState("");
-  const [blocks, setBlocks] = useState([]);
+  const [content, setContent] = useState(""); // single large textarea
 
-  // Fetch board title from API
-  async function fetchBoard() {
+  // Fetch board from DB
+  const fetchBoard = async () => {
     try {
       const res = await fetch(`/api/boards/${id}`);
       if (!res.ok) return;
-
       const data = await res.json();
       setBoard(data);
       setTitle(data.title);
-
-      // Load blocks from localStorage if exists, else from DB
-      const savedBlocks = localStorage.getItem(`board-blocks-${id}`);
-      if (savedBlocks) {
-        setBlocks(JSON.parse(savedBlocks));
-      } else {
-        setBlocks(data.blocks || []);
-      }
+      // Combine all blocks content into single textarea
+      setContent(data.blocks?.map(b => b.content).join("\n\n") || "");
     } catch (err) {
       console.log(err);
     }
-  }
+  };
 
   useEffect(() => {
     if (id) fetchBoard();
   }, [id]);
 
-  // Delete the whole board
-  async function deleteBoard() {
+  // Save board content and title
+  const saveBoard = async (updatedContent, updatedTitle) => {
+    try {
+      // Split content by double line breaks into blocks
+      const updatedBlocks = updatedContent
+        .split("\n\n")
+        .filter(Boolean)
+        .map((c) => ({ id: Date.now().toString() + Math.random(), content: c }));
+
+      await fetch(`/api/boards/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ blocks: updatedBlocks, title: updatedTitle }),
+      });
+
+      setContent(updatedContent);
+      setTitle(updatedTitle);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  // Delete whole board
+  const deleteBoard = async () => {
     try {
       await fetch(`/api/boards/${id}`, { method: "DELETE" });
-      localStorage.removeItem(`board-blocks-${id}`); // clean localStorage
       router.push("/collab");
     } catch (err) {
       console.log(err);
     }
-  }
-
-  // Update block content and save to localStorage immediately
-  const updateBlock = (blockId, content) => {
-    const updatedBlocks = blocks.map((b) =>
-      b.id === blockId ? { ...b, content } : b
-    );
-    setBlocks(updatedBlocks);
-    localStorage.setItem(`board-blocks-${id}`, JSON.stringify(updatedBlocks));
-  };
-
-  // Delete individual block
-  const deleteBlock = (blockId) => {
-    const updatedBlocks = blocks.filter((b) => b.id !== blockId);
-    setBlocks(updatedBlocks);
-    localStorage.setItem(`board-blocks-${id}`, JSON.stringify(updatedBlocks));
-  };
-
-  // Add new block
-  const addBlock = () => {
-    const newBlock = { id: Date.now().toString(), content: "" };
-    const updatedBlocks = [...blocks, newBlock];
-    setBlocks(updatedBlocks);
-    localStorage.setItem(`board-blocks-${id}`, JSON.stringify(updatedBlocks));
   };
 
   if (!board) {
@@ -84,7 +73,6 @@ export default function BoardPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-zinc-950 to-black text-white px-4 py-12">
       <div className="max-w-4xl mx-auto">
-
         {/* Header */}
         <div className="mb-8">
           <button
@@ -98,48 +86,28 @@ export default function BoardPage() {
             <input
               className="bg-zinc-900/60 border border-zinc-800 px-4 py-3 rounded-xl text-3xl font-semibold w-full outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => saveBoard(content, e.target.value)}
             />
-
-            <button
-              onClick={deleteBoard}
-              className="bg-red-500/90 hover:bg-red-600 px-6 py-3 rounded-xl font-medium transition"
-            >
-              Delete Board
-            </button>
+          <button
+  onClick={deleteBoard}
+  className="bg-white text-black px-4 py-2 sm:px-6 sm:py-3 rounded-2xl font-medium transition shadow-lg shadow-indigo-500/20 w-full sm:w-auto text-center whitespace-nowrap hover:bg-indigo-400 hover:text-white"
+>
+  Delete Board
+</button>
           </div>
 
           <p className="text-zinc-400 text-sm mt-2">
-            Changes are saved locally in your browser. You can delete individual blocks below.
+            Changes are saved automatically.
           </p>
         </div>
 
-        {/* Blocks */}
-        <div className="space-y-4" id="board-content">
-          {blocks.map((block) => (
-            <div key={block.id} className="relative">
-              <textarea
-                value={block.content}
-                onChange={(e) => updateBlock(block.id, e.target.value)}
-                placeholder="Write something..."
-                className="w-full min-h-[80px] sm:min-h-[120px] bg-zinc-900/50 border border-zinc-800 rounded-2xl p-4 text-white outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition resize-none text-lg"
-              />
-              <button
-                onClick={() => deleteBlock(block.id)}
-                className="absolute top-2 right-2 text-red-500 hover:text-red-400 text-sm"
-              >
-                Delete
-              </button>
-            </div>
-          ))}
-
-          <button
-            onClick={addBlock}
-            className="mt-4 text-indigo-400 hover:text-indigo-500 text-sm font-medium transition"
-          >
-            + Add a new block
-          </button>
-        </div>
+        {/* Large Notion-style textarea */}
+        <textarea
+          value={content}
+          onChange={(e) => saveBoard(e.target.value, title)}
+          placeholder="Start writing your ideas..."
+          className="w-full min-h-[500px] sm:min-h-[700px] bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 text-white outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition text-lg resize-none"
+        />
       </div>
     </div>
   );
