@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Nav from "../components/Nav";
+import Footer from "../components/Footer";
 
 export default function BoardsPage() {
   const [boards, setBoards] = useState([]);
@@ -89,8 +91,15 @@ export default function BoardsPage() {
   );
 
   return (
+    <div>
+<Nav/>
+    
     <div className="relative min-h-screen bg-gradient-to-b from-black via-zinc-950 to-black text-white px-4 py-16 overflow-hidden">
-      {/* Subtle Glow */}
+      {/* Subtle Glow */
+      
+      }
+
+      
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-indigo-500/10 blur-3xl rounded-full pointer-events-none" />
 
       <div className="max-w-6xl mx-auto relative z-10">
@@ -233,6 +242,9 @@ export default function BoardsPage() {
           </div>
         )}
       </div>
+       <Footer/>
+    </div>
+   
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { IoLockClosed } from "react-icons/io5";
 import Image from "next/image";
+import Footer from "./Footer";
 export default function Home() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -69,60 +70,79 @@ const [menuOpen, setMenuOpen] = useState(false);
   return (
     <main className="min-h-screen text-neutral-100 bg-gradient-to-b from-neutral-950 via-neutral-950 to-black flex flex-col">
       {/* Navbar */}
-  <nav className="w-full max-w-7xl mx-auto px-6 py-4 flex items-center justify-between relative">
-      {/* Logo */}
-      <Image src="/qw.png" width={180} // adjust for desktop
-    height={180} alt=""/>
-      <h1 className="text-2xl font-bold tracking-tight text-white">
-        TaskFlow
-      </h1>
+  <nav className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+      
+  {/* Logo */}
+  <div className="flex items-center gap-2">
+    <Image 
+      src="/11.jfif" 
+      width={40} 
+      height={40} 
+      alt="logo"
+      className="rounded-md"
+    />
+    <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+      TaskFlow
+    </h1>
+  </div>
 
-      {/* Desktop Buttons */}
-      <div className="hidden md:flex items-center gap-4">
+  {/* Desktop Buttons */}
+  <div className="hidden md:flex items-center gap-4">
+    <button
+      onClick={() => { setIsLogin(true); setOpen(true); }}
+      className="px-4 py-2 text-sm text-neutral-400 hover:text-white transition rounded-lg"
+    >
+      Login
+    </button>
+    <button
+      onClick={() => { setIsLogin(false); setOpen(true); }}
+      className="px-5 py-2 bg-white text-black font-medium rounded-lg shadow-md shadow-white/10 hover:scale-105 transition"
+    >
+      Get Started
+    </button>
+  </div>
+
+  {/* Mobile Menu Button */}
+  <div className="md:hidden relative">
+    <button
+      onClick={() => setMenuOpen(!menuOpen)}
+      className="p-2 rounded-md hover:bg-white/20 transition"
+    >
+      <svg 
+        className="w-6 h-6 text-white" 
+        fill="none" 
+        stroke="currentColor" 
+        viewBox="0 0 24 24"
+      >
+        <path 
+          strokeLinecap="round" 
+          strokeLinejoin="round" 
+          strokeWidth={2} 
+          d="M4 6h16M4 12h16M4 18h16" 
+        />
+      </svg>
+    </button>
+
+    {/* Dropdown Menu */}
+    {menuOpen && (
+      <div className="absolute right-0 mt-3 w-44 bg-neutral-900 border border-neutral-800 rounded-lg shadow-lg flex flex-col py-2 z-50">
         <button
-          onClick={() => { setIsLogin(true); setOpen(true); }}
-          className="px-4 py-2 text-sm text-neutral-400 hover:text-white transition rounded-lg"
+          onClick={() => { setIsLogin(true); setOpen(true); setMenuOpen(false); }}
+          className="w-full text-left px-4 py-2 text-sm text-neutral-400 hover:text-white hover:bg-white/10 transition"
         >
           Login
         </button>
         <button
-          onClick={() => { setIsLogin(false); setOpen(true); }}
-          className="px-5 py-2 bg-white text-black font-medium rounded-lg shadow-md shadow-white/10 hover:scale-105 transition"
+          onClick={() => { setIsLogin(false); setOpen(true); setMenuOpen(false); }}
+          className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition"
         >
           Get Started
         </button>
       </div>
+    )}
+  </div>
 
-      {/* Mobile Menu Button */}
-      <div className="md:hidden relative">
-        <button
-          onClick={() => setMenuOpen(!menuOpen)}
-          className="p-2 rounded-md hover:bg-white/20 transition"
-        >
-          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
-
-        {/* Dropdown Menu */}
-        {menuOpen && (
-          <div className="absolute right-0 mt-2 w-40 bg-neutral-900 border border-neutral-800 rounded-lg shadow-lg flex flex-col py-2">
-            <button
-              onClick={() => { setIsLogin(true); setOpen(true); setMenuOpen(false); }}
-              className="w-full text-left px-4 py-2 text-sm text-neutral-400 hover:text-white hover:bg-white/10 transition"
-            >
-              Login
-            </button>
-            <button
-              onClick={() => { setIsLogin(false); setOpen(true); setMenuOpen(false); }}
-              className="w-full text-left px-4 py-2 text-sm text-white bg-black hover:bg-white/10 transition"
-            >
-              Get Started
-            </button>
-          </div>
-        )}
-      </div>
-    </nav>
+</nav>
       {/* Hero */}
       <section className="flex-grow flex flex-col justify-center max-w-5xl mx-auto px-6 text-center py-24">
         <h1 className="text-4xl md:text-6xl font-semibold tracking-tight leading-tight">
@@ -228,9 +248,7 @@ const [menuOpen, setMenuOpen] = useState(false);
       )}
 
       {/* Footer */}
-      <footer className="border-t border-neutral-900 text-center text-sm text-neutral-500 py-6 mt-auto">
-        Built for Full Stack Assignment
-      </footer>
+    <Footer/>
     </main>
   );
 }
